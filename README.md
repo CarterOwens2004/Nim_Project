@@ -8,7 +8,7 @@
 
 
 ## How to Build
-==================================   We can add something here when we're done    ==================================
+We can add something here when we're done
 
 ## How to Play
 Thanks for playing our game!!
@@ -26,13 +26,15 @@ The board shows each pile and how many rocks are in it. On your turn you pick a 
 
 
 ## Project File Structure (.zip)
-Nim/
-├── nim.cpp              # Game logic implementations (validation, win detection, board format, GameState struct, enums, function declarations)
-├── Nim.h                # Constants and protocol strings (Adjusted from StudyBuddy project)
-├── nimNetwork.cpp       # Server and client networking (Winsock2, UDP, negotiation)
-├── Utilities.cpp        # Broadcast helpers, wait(), GetBroadcastAddress() (Renamed variables and adjusted from StudyBuddy)
-└── [main / GUI file]    # User interface
-
+```
+Nim_Project/
+├── nim.cpp           # Game logic implementations
+├── Nim.h             # Constants and protocol strings
+├── nimNetwork.cpp    # Server and client networking 
+├── Utilities.cpp     # Broadcast helpers, wait(), GetBroadcastAddress()
+└── [main / GUI file] # User interface
+```
+Nim.h and Utilities.cpp were renamed and adjusted from StudyBuddy
 
 ## Known Bugs and Defects
-==================================   We can add something here when we're done    ==================================
+We can add something here when we're done
