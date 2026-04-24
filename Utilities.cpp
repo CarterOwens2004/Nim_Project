@@ -2,7 +2,7 @@
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
-#include "StudyBuddy.h"
+#include "Nim.h"
 
 #pragma comment (lib, "iphlpapi.lib")
 
@@ -21,7 +21,7 @@ int getServers(SOCKET s, ServerStruct server[])
 
 	sockaddr_in broadcastAddress = GetBroadcastAddress(IPAddress, subnetMask);
 
-	int iResult = sendto(s, Study_QUERY, strlen(Study_QUERY) + 1, 0, (sockaddr*)&broadcastAddress, sizeof(broadcastAddress));
+	int iResult = sendto(s, Nim_QUERY, strlen(Nim_QUERY) + 1, 0, (sockaddr*)&broadcastAddress, sizeof(broadcastAddress));
 	char recvBuf[DEFAULT_BUFLEN];
 
 	int status = wait(s, 2, 0);
