@@ -10,6 +10,88 @@ using std::cin;
 using std::endl;
 using std::string;
 
+void clientNegotions(const char* client_name) {
+
+	SOCKET clientSocket = INVALID_SOCKET;
+	clientSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (clientSocket == INVALID_SOCKET) {
+		cout << "SOCKET() failed: " << WSAGetLastError() << endl;
+		WSACleanup();
+		return;
+	}
+
+
+	ServerStruct servers[MAX_SERVERS];
+
+	while (true) {
+		ServerStruct target = chooseServer(clientSocket, servers);
+
+		if (challenge(clientSocket, target, client_name)) {
+			break;// ties into game loop
+		}
+	}
+}
+
+ServerStruct chooseServer(SOCKET s, ServerStruct serverList[]) {
+	//Who? prints avaiable servers
+	int num = getServers(s, serverList);
+
+	if (num == 0) {
+		cout << "None found" << endl;
+		return chooseServer(s, serverList);;
+
+	}
+	for (int i = 0; i < num; i++)
+		cout << i + 1 << ". " << serverList[i].name << endl;
+
+	//choose server
+	cout << "Choose a server to challenge: ";
+	int choice;
+	cin >> choice;
+	cin.ignore();
+
+	if (choice < 1 || choice > num)
+		return chooseServer(s, serverList);
+
+	return serverList[choice - 1];
+
+}
+
+bool challenge(SOCKET sock, ServerStruct target, const char* client_name) {
+	char sendBuf[DEFAULT_BUFLEN] = "";
+	strcpy(sendBuf, Nim_CHALLENGE);
+	strncat(sendBuf, client_name, DEFAULT_BUFLEN - strlen(sendBuf) - 1);
+
+	sendto(sock, sendBuf, (int)strlen(sendBuf) + 1, 0, (sockaddr*)&target.addr, sizeof(target.addr));
+
+	//rename target
+	if (wait(sock, 10, 0)) {
+		char recvBuf[DEFAULT_BUFLEN];
+		sockaddr_in recvAddr;
+		int addrLen = sizeof(recvAddr);
+
+		int bytesReceived = recvfrom(sock, recvBuf, DEFAULT_BUFLEN - 1, 0, (sockaddr*)&recvAddr, &addrLen);
+
+		if (bytesReceived <= 0) {
+			return false;
+		}
+
+		recvBuf[bytesReceived] = '\0';
+
+		if (recvAddr.sin_addr.s_addr != target.addr.sin_addr.s_addr) {
+			return false;
+		}
+
+		if (_stricmp(recvBuf, Nim_YES) == 0) {
+			sendto(sock, Nim_GREAT, (int)strlen(Nim_GREAT) + 1, 0,
+				(sockaddr*)&target.addr, sizeof(target.addr));
+			return true;
+		}
+
+		return false;
+	}
+}
+
 SOCKET establishServerSocket() {
 	SOCKET StudySocket = INVALID_SOCKET;
 	StudySocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
