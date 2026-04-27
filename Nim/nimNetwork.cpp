@@ -34,7 +34,7 @@ SOCKET establishServerSocket() {
 	return StudySocket;
 }
 
-void negotiateServer(char user[]) {
+void negotiateServer(char user[], GameState game) {
 	SOCKET hostSocket = establishServerSocket();
 	if (hostSocket == SOCKET_ERROR) {
 		cout << "establishServerSocket() failed.\n";
@@ -75,7 +75,8 @@ void negotiateServer(char user[]) {
 				opponent.addr = addr;
 
 				// send YES to the client
-				iResult = sendto(hostSocket, Nim_YES, (int)sizeof(Nim_YES) + 1, 0, (sockaddr*)&opponent.addr, (int)sizeof(opponent.addr));
+				string yesBuf = Nim_YES;
+				iResult = sendto(hostSocket, yesBuf.data(), (int)sizeof(yesBuf.data()) + 1, 0, (sockaddr*)&opponent.addr, (int)sizeof(opponent.addr));
 				if (iResult == SOCKET_ERROR) {
 					cout << "sendto failed with error: " + WSAGetLastError() << '\n';
 					return;
@@ -90,7 +91,8 @@ void negotiateServer(char user[]) {
 			}
 			else if (_stricmp(response, Nim_NO)) {
 				// send NO to the client
-				iResult = sendto(hostSocket, Nim_NO, (int)sizeof(Nim_NO) + 1, 0, (sockaddr*)&opponent.addr, (int)sizeof(opponent.addr));
+				string noBuf = Nim_NO;
+				iResult = sendto(hostSocket, noBuf.data(), (int)sizeof(noBuf.data()) + 1, 0, (sockaddr*)&opponent.addr, (int)sizeof(opponent.addr));
 				if (iResult == SOCKET_ERROR) {
 					cout << "sendto failed with error: " + WSAGetLastError() << '\n';
 					return;
@@ -99,12 +101,11 @@ void negotiateServer(char user[]) {
 		}
 		iResult = recvfrom(hostSocket, recvBuf, DEFAULT_BUFLEN, 0, (sockaddr*)&addr, &addrSize);
 	}
-	if (iResult == SOCKET_ERROR) {
+	if (iResult == SOCKET_ERROR) { // if the loop actually hit the sentinel--i.e., the pre-test loop condition was false
 		cout << "recvfrom failed with error: " << WSAGetLastError() << '\n';
 		return;
 	}
 	// If we've found a game and confirmed the 3-way handshake ("Player=" -> "YES" -> "GREAT"), initialize the gameboard and start the game loop
-	GameState game;
 	initGame(game, false);
 	// gameLoop(game, opponent);
 }
