@@ -2,7 +2,7 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include "Nim.h"
-#include "nim.cpp"
+#include "nimGame.h"
 #include <string>
 
 using std::cout;
