@@ -24,34 +24,9 @@
 #include <cstring>
 #include <cstdlib>
 #include <ctime>
-
-enum GameStatus {
-    STATUS_WAITING,         // before a game starts
-    STATUS_ACTIVE,          // game in progress
-    STATUS_WIN,             // local player took the last rock
-    STATUS_LOSE,            // opponent took the last rock
-    STATUS_WIN_DEFAULT,     // opponent timed out or sent invalid move
-    STATUS_FORFEIT_LOSE,    // local player sent 'F' (to exit)
-    STATUS_FORFEIT_WIN,     // opponent sent 'F' (to exit)
-    STATUS_ENDED            // game over
-};
-
-enum MoveResult {
-    MOVE_OK,                // valid move
-    MOVE_BAD_PILE,          // pile doesn't exist or is empty
-    MOVE_BAD_COUNT,         // rock count out of range
-    MOVE_BAD_FORMAT,        // well, bad format 
-    MOVE_FORFEIT,           // datagram was "F"
-    MOVE_CHAT               // datagram was a chat message, not a move
-};
-
-struct GameState {
-    int piles[9];    
-    int numPiles;    
-    bool myTurn;      
-    bool iAmClient;   
-    GameStatus status;      
-};
+#include <WinSock2.h>
+#include "Nim.h"
+#include "nimGame.h"
 
 
 void initGame(GameState& gs, bool iAmClient) {

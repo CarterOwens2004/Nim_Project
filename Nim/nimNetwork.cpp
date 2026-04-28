@@ -10,27 +10,6 @@ using std::cin;
 using std::endl;
 using std::string;
 
-void clientNegotions(const char* client_name) {
-
-	SOCKET clientSocket = INVALID_SOCKET;
-	clientSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (clientSocket == INVALID_SOCKET) {
-		cout << "SOCKET() failed: " << WSAGetLastError() << endl;
-		WSACleanup();
-		return;
-	}
-
-
-	ServerStruct servers[MAX_SERVERS];
-
-	while (true) {
-		ServerStruct target = chooseServer(clientSocket, servers);
-
-		if (challenge(clientSocket, target, client_name)) {
-			break;// ties into game loop
-		}
-	}
-}
 
 ServerStruct chooseServer(SOCKET s, ServerStruct serverList[]) {
 	//Who? prints avaiable servers
@@ -89,6 +68,30 @@ bool challenge(SOCKET sock, ServerStruct target, const char* client_name) {
 		}
 
 		return false;
+	}
+}
+
+void clientNegotions(const char* client_name) {
+
+	SOCKET clientSocket = INVALID_SOCKET;
+	clientSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (clientSocket == INVALID_SOCKET) {
+		cout << "SOCKET() failed: " << WSAGetLastError() << endl;
+		WSACleanup();
+		return;
+	}
+
+
+	ServerStruct servers[MAX_SERVERS];
+
+	while (true) {
+		ServerStruct target = chooseServer(clientSocket, servers);
+
+		if (challenge(clientSocket, target, client_name)) {
+			
+			
+			break;// ties into game loop
+		}
 	}
 }
 
@@ -190,4 +193,16 @@ void negotiateServer(char user[], GameState game) {
 	// If we've found a game and confirmed the 3-way handshake ("Player=" -> "YES" -> "GREAT"), initialize the gameboard and start the game loop
 	initGame(game, false);
 	// gameLoop(game, opponent);
+}
+
+
+int main(){
+	char user_buf[MAX_NAME];
+	cout << "What is your name?" << endl;
+	cin.getline(user_buf, MAX_NAME);
+	cout << "Would you prefer to host a game or to challenge some other host? \n"
+		 << "Type \"Host\" to host a game or \"Challange\" to challenge a host";
+
+	
+    return 0;
 }

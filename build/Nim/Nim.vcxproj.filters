@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\carte\OneDrive\Documents\GitHub\Nim_Project\Nim\nimNetwork.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\carte\OneDrive\Documents\GitHub\Nim_Project\Nim\nim.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\carte\OneDrive\Documents\GitHub\Nim_Project\Nim\Utilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\carte\OneDrive\Documents\GitHub\Nim_Project\Nim\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{2058F153-5BDE-3BF2-ADC7-F96AB36150C1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

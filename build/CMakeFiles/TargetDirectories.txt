@@ -1,0 +1,3 @@
+C:/Users/carte/OneDrive/Documents/GitHub/Nim_Project/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/carte/OneDrive/Documents/GitHub/Nim_Project/build/CMakeFiles/ZERO_CHECK.dir
+C:/Users/carte/OneDrive/Documents/GitHub/Nim_Project/build/Nim/CMakeFiles/Nim.dir
