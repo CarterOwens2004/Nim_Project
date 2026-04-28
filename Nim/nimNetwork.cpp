@@ -71,7 +71,7 @@ bool challenge(SOCKET sock, ServerStruct target, const char* client_name) {
 	}
 }
 
-void clientNegotions(const char* client_name) {
+void clientNegotions(const char* client_name, GameState game) {
 
 	SOCKET clientSocket = INVALID_SOCKET;
 	clientSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -197,12 +197,37 @@ void negotiateServer(char user[], GameState game) {
 
 
 int main(){
+	// WSAStartup
+	WSADATA wsaData;
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
+
+	//Get User's name
 	char user_buf[MAX_NAME];
+	char choice_buf[2];
 	cout << "What is your name?" << endl;
 	cin.getline(user_buf, MAX_NAME);
-	cout << "Would you prefer to host a game or to challenge some other host? \n"
-		 << "Type \"Host\" to host a game or \"Challange\" to challenge a host";
-
 	
+	// Host and/or Challenge Loop
+	// Loops until either user chooses host or challenge,
+	// And loops so that when game finishes, it asks to host or challenge again
+	while (true) {
+        cout << "Host (h) or Challenge (c)? ";
+        char choice[8];
+        cin.getline(choice, 8);
+
+        GameState game = {};
+
+        if (_stricmp(choice, "h") == 0) {
+            negotiateServer(user_buf, game);
+        } else if (_stricmp(choice, "c") == 0) {
+            clientNegotions(user_buf, game);
+        } else {
+            cout << "Invalid choice.\n";
+			continue;
+		}
+    }
+
+	// Cleanup
+	WSACleanup();
     return 0;
 }
