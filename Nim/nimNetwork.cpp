@@ -54,7 +54,6 @@ void gameLoop(SOCKET sock, ServerStruct opponent, GameState& game) {
 		}
 	}
 
-
 	// Enter the main game loop
 	// AKA the game has finally started
 	while(game.status == STATUS_ACTIVE){
@@ -62,6 +61,7 @@ void gameLoop(SOCKET sock, ServerStruct opponent, GameState& game) {
         for (int i = 0; i < game.numPiles; i++){
     			cout << "Pile " << i+1 << ": " << game.piles[i] << " rocks\n";
 		}
+
 
 		if(game.myTurn){
 			
@@ -159,6 +159,7 @@ void gameLoop(SOCKET sock, ServerStruct opponent, GameState& game) {
 						);
 			recvBuf[bytes] = '\0';
 			
+			// make sure message is only from our opp
 			if (addr.sin_addr.s_addr != opponent.addr.sin_addr.s_addr){
    				continue;
 			}
@@ -254,6 +255,7 @@ bool challenge(SOCKET sock, ServerStruct target, const char* client_name) {
 
 		return false;
 	}
+	return false;
 }
 
 void clientNegotions(const char* client_name, GameState& game) {
@@ -276,7 +278,8 @@ void clientNegotions(const char* client_name, GameState& game) {
 			
 			// start a game as client
 			initGame(game, true);
-			gameLoop(clientSocket, target, game);	// where the game will be played
+			gameLoop(clientSocket, target, game);
+			break;	// where the game will be played
 		}
 	}
 }
@@ -318,10 +321,10 @@ void negotiateServer(char user[], GameState& game) {
 	int addrSize = sizeof(addr);
 
 	ServerStruct opponent; // opponent's name and address saved and passed along
-
+	cout << "Waiting for challengers...\n";
 	iResult = recvfrom(hostSocket, recvBuf, DEFAULT_BUFLEN, 0, (sockaddr*)&addr, &addrSize);
 	while (iResult != SOCKET_ERROR) { // We're waiting for a game
-		cout << "Received " << iResult << " bytes from " << addr.sin_addr.S_un.S_addr << ": " << recvBuf << endl;
+		// cout << "Received " << iResult << " bytes from " << addr.sin_addr.S_un.S_addr << ": " << recvBuf << endl;
 
 		if (_stricmp(recvBuf, Nim_QUERY)) {
 			string sendBuf = Nim_NAME + (string)user;
@@ -332,6 +335,16 @@ void negotiateServer(char user[], GameState& game) {
 			}
 		}
 		else if (_stricmp(recvBuf, Nim_CHALLENGE)) {
+			// parse name first
+    		string challengeMsg = string(recvBuf);
+    		size_t pos = challengeMsg.find('=');
+    		string challengerName;
+    		if (pos != string::npos) {
+       			challengerName = challengeMsg.substr(pos + 1);
+			}
+			// prompt
+			cout << "You've been challenged by " << challengerName << "! Accept? (YES/NO): ";
+			
 			char response[DEFAULT_BUFLEN];
 			cin.getline(response, DEFAULT_BUFLEN); // or get it from the GUI
 

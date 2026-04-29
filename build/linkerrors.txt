@@ -1,0 +1,8 @@
+================================================================================
+Linker Errors
+Generated: 2026-04-29T17:49:46.458Z
+Total Errors: 1
+================================================================================
+
+[LNK1168] (MSVC)
+cannot open C:\Users\carte\OneDrive\Documents\GitHub\Nim_Project\build\Nim\Debug\Nim.exe for writing [C:\Users\carte\OneDrive\Documents\GitHub\Nim_Project\build\Nim\Nim.vcxproj]
