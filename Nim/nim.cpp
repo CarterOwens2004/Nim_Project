@@ -263,3 +263,4 @@ void exampleTurnLoop(GameState& gs) {
         }
     }
 }
+

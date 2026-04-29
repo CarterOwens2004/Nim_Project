@@ -10,6 +10,191 @@ using std::cin;
 using std::endl;
 using std::string;
 
+void gameLoop(SOCKET sock, ServerStruct opponent, GameState& game) {
+
+	//check to see if host or client
+	if(!game.iAmClient){
+		// if host build and send the board
+		char boardBuf[32];
+		buildBoardDatagram(game, boardBuf);
+		sendto( sock,
+				boardBuf, 
+				(int)strlen(boardBuf) + 1, 
+				0, 
+				(sockaddr*)&opponent.addr, 
+				sizeof(opponent.addr));
+		
+	}
+	else {
+		//client wait and receives the board
+
+		if(!wait(sock, 30, 0)){		// 30 second timer waiting for board
+			cout << "No board received. You win by default.\n";
+			endGame(game, STATUS_WIN_DEFAULT);
+			return;
+		}
+		// if board is actually sent
+		// client parses the board
+		char boardBuf[32];
+		sockaddr_in addr;
+		int addrLen = sizeof(addr);
+		int bytes = recvfrom(sock, 
+							boardBuf, 
+							sizeof(boardBuf)-1, 
+							0, 
+							(sockaddr*)&addr, 
+							&addrLen);
+		boardBuf[bytes] = '\0';
+		
+		// check to see if the board is valid
+		if (!parseBoardDatagram(boardBuf, game.piles, game.numPiles)){
+			cout << "Invalid board received. You win by default.\n";
+			endGame(game, STATUS_WIN_DEFAULT);
+			return;
+		}
+	}
+
+
+	// Enter the main game loop
+	// AKA the game has finally started
+	while(game.status == STATUS_ACTIVE){
+		// show the board
+        for (int i = 0; i < game.numPiles; i++){
+    			cout << "Pile " << i+1 << ": " << game.piles[i] << " rocks\n";
+		}
+
+		if(game.myTurn){
+			
+			//When it is their turn, give them the three options
+			cout << "Chat (c), Forfeit (f), or Move(m)?";
+			char action[4];
+			cin.getline(action, 4);
+			
+			// Forfeit
+			if (_stricmp(action, "f") == 0){
+				sendto(sock, "F", 2, 0 , (sockaddr*)&opponent.addr, sizeof(opponent.addr));
+				endGame(game, STATUS_FORFEIT_LOSE);
+				break;
+			}
+			// Chat
+			else if (_stricmp(action, "c") == 0){
+				char message[80];
+				cout << "Message: ";
+				cin.getline(message, 80);
+
+				char chatBuf[82];
+				chatBuf[0] = 'C';
+				strncpy(chatBuf + 1, message, 80);
+				chatBuf[81] = '\0';
+				sendto(sock, chatBuf, (int)strlen(chatBuf) + 1, 0, (sockaddr*)&opponent.addr, sizeof(opponent.addr));
+				continue;
+			} 
+			// If it is not a move, sends user back to the top
+			else if (_stricmp(action, "m") != 0) {
+   				 cout << "Invalid option.\n";
+    			continue;
+			}
+
+			int pile = 0, count = 0;
+			// or get move
+			cout << "Pile: ";
+			cin >> pile;
+			cout << "Rocks to remove: ";
+			cin >> count;
+			cin.ignore();
+
+            MoveResult r = validateOutgoingMove(game, pile, count);
+            if (r == MOVE_BAD_PILE)  { 
+				/* show "invalid pile" error */ 
+				cout << "Not a valid pile\n";
+				continue; 
+			}
+            if (r == MOVE_BAD_COUNT) {
+				 /* show "invalid count" error */ 
+				 cout << "Not a valid count\n";
+				 continue; 
+			}
+
+            char moveBuf[4];
+            buildMoveDatagram(pile, count, moveBuf);
+            // send moveBuf as UDP datagram to opponent
+			sendto( sock, 
+					moveBuf, 
+					(int)strlen(moveBuf) + 1, 
+					0, 
+					(sockaddr*)&opponent.addr, 
+					sizeof(opponent.addr)
+				);
+
+            applyMove(game, pile, count);
+            // update the board display
+
+            if (checkWin(game)) {
+                endGame(game, STATUS_WIN);
+                // show winning message
+				cout << "YOU WIN!!!!\n";
+                break;
+            }
+		} else {
+			//receive and validate oppponent moves
+			
+			//gui shwos a waiting message
+			char recvBuf[256] = {0};
+            int pile = 0, count = 0;
+
+			if (!wait(sock, 30, 0)) {
+  				cout << "Opponent timed out. You win by default.\n";
+   				endGame(game, STATUS_WIN_DEFAULT);
+    			break;
+			}
+
+			sockaddr_in addr;
+			int addrLen = sizeof(addr);
+			int bytes = recvfrom(sock, 
+							recvBuf, 
+							sizeof(recvBuf)-1, 
+							0, 
+							(sockaddr*)&addr, 
+							&addrLen
+						);
+			recvBuf[bytes] = '\0';
+			
+			if (addr.sin_addr.s_addr != opponent.addr.sin_addr.s_addr){
+   				continue;
+			}
+            MoveResult r = validateIncomingMove(game, recvBuf, pile, count);
+
+            if (r == MOVE_CHAT) {
+				cout << "Opponent: " << (recvBuf + 1) << "\n";
+                continue; // keep waiting, don't switch turns, just chat
+            }
+
+            if (r == MOVE_FORFEIT) {
+                endGame(game, STATUS_FORFEIT_WIN);
+				cout << "Opponent forfeited. YOU WIN!!!\n";
+                break;
+            }
+
+            if (r != MOVE_OK) {
+                endGame(game, STATUS_WIN_DEFAULT);
+                cout << "Opponent made an invalid move. YOU WIN!!!\n";
+                break;
+            }
+
+            applyMove(game, pile, count);
+
+            if (checkWin(game)) {
+                endGame(game, STATUS_LOSE);
+                // gui show losing message
+				cout << "YOU LOSE!!!\n";
+                break;
+            }
+
+		}
+
+	}
+
+}
 
 ServerStruct chooseServer(SOCKET s, ServerStruct serverList[]) {
 	//Who? prints avaiable servers
@@ -71,7 +256,7 @@ bool challenge(SOCKET sock, ServerStruct target, const char* client_name) {
 	}
 }
 
-void clientNegotions(const char* client_name, GameState game) {
+void clientNegotions(const char* client_name, GameState& game) {
 
 	SOCKET clientSocket = INVALID_SOCKET;
 	clientSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -89,8 +274,9 @@ void clientNegotions(const char* client_name, GameState game) {
 
 		if (challenge(clientSocket, target, client_name)) {
 			
-			
-			break;// ties into game loop
+			// start a game as client
+			initGame(game, true);
+			gameLoop(clientSocket, target, game);	// where the game will be played
 		}
 	}
 }
@@ -119,7 +305,7 @@ SOCKET establishServerSocket() {
 	return StudySocket;
 }
 
-void negotiateServer(char user[], GameState game) {
+void negotiateServer(char user[], GameState& game) {
 	SOCKET hostSocket = establishServerSocket();
 	if (hostSocket == SOCKET_ERROR) {
 		cout << "establishServerSocket() failed.\n";
@@ -192,9 +378,8 @@ void negotiateServer(char user[], GameState game) {
 	}
 	// If we've found a game and confirmed the 3-way handshake ("Player=" -> "YES" -> "GREAT"), initialize the gameboard and start the game loop
 	initGame(game, false);
-	// gameLoop(game, opponent);
+	gameLoop(hostSocket, opponent, game);
 }
-
 
 int main(){
 	// WSAStartup
@@ -203,7 +388,6 @@ int main(){
 
 	//Get User's name
 	char user_buf[MAX_NAME];
-	char choice_buf[2];
 	cout << "What is your name?" << endl;
 	cin.getline(user_buf, MAX_NAME);
 	
